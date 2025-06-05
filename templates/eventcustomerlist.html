@@ -1,11 +1,35 @@
 {% extends "base.html" %}
-
-{% block title %}Selwyn Event Ticketing - Customers{% endblock %}
-
+{% block title %}Selwyn Event Ticketing - Event Customer List{% endblock %}
 {% block content %}
+<div class="container mt-4">
+    <h2>Customers for {{ event.event_name }} ({{ event.event_date.strftime('%d/%m/%Y') }})</h2>
 
-<p>Events</p>
+    {# Flash messages are being handled dynamically in base.html #}
 
-<!-- Display a list of customers who have purchased tickets for a particular event -->
-
+    {% if customers %}
+    <table class="table table-bordered table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Customer Name</th> 
+                <th>Tickets Bought</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for customer in customers %} { # Displaying the list of customers}
+            <tr>
+                <td><a href="/">{{ customer.full_name }}</a></td>
+                <td>{{ customer.ticket_quantity }}</td>
+                <td>
+                    <a href="/" class="btn btn-primary btn-sm">View Summary</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No customers have purchased tickets for this event.</p>
+    {% endif %}
+    <a href="{{ url_for('events') }}" class="btn btn-secondary mt-3">Back to Events</a>
+</div>
 {% endblock %}
