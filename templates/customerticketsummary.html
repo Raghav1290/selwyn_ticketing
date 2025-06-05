@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ customer.full_name }}</h2>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Customer Details</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>First Name:</strong> {{ customer.first_name }}</p>
+                    <p><strong>Family Name:</strong> {{ customer.family_name }}</p>
+                    <p><strong>Date of Birth:</strong> {{ customer.date_of_birth }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Email:</strong> {{ customer.email }}</p>
+                    <p><strong>Customer ID:</strong> {{ customer.customer_id }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Ticket Purchases</h5>
+            <p><strong>Total Tickets Purchased:</strong> {{ total_tickets }}</p>
+
+            {% if tickets %}
+            <table class="table table-bordered table-hover mt-3">
+                <thead>
+                    <tr>
+                        <th>Event Name</th>
+                        <th>Event Date</th>
+                        <th>Tickets Bought</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for ticket in tickets %}
+                    <tr>
+                        <td>{{ ticket.event_name }}</td>
+                        <td>{{ ticket.event_date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ ticket.tickets_purchased }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p>No tickets purchased yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a href="{{ url_for('editcustomer', customer_id=customer.customer_id) }}" class="btn btn-primary">Edit Customer Details</a>
+        <a href="{{ url_for('customers_list') }}" class="btn btn-secondary">Back to Customer List</a>
+    </div>
+</div>
+{% endblock %}

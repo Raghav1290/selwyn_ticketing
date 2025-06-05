@@ -6,10 +6,8 @@ import connect
 import re # Regex used for email and phone validations
 
 app = Flask(__name__)
-app.secret_key = 'raghav_secret_key' # Setting secret key for session management and flash message
+app.secret_key = 'raghav_secret_key_very_secure_key' # Setting secret key for session management and flash message
 
-
-app = Flask(__name__)
 
 connection = None
 cursor = None
@@ -47,7 +45,7 @@ def home():
 #Events Route
 @app.route("/events", methods=["GET"])
 def events():
-    cursor = getCursor()
+    cursor = getCursor() #Getting database cursor for specifoc route
     qstr = "SELECT event_id, event_name FROM events ORDER BY event_name ASC;" # Added query to fetch all event data sorted by event name
     cursor.execute(qstr)
     events = cursor.fetchall()
@@ -57,7 +55,7 @@ def events():
 # Route for displaying data of event tickets purchased by the customer
 @app.route("/events/customerlist", methods=["POST"])
 def eventcustomerlist():
-    cursor = getCursor()
+    cursor = getCursor() #Getting database cursor for specifoc route
     event_id = request.form.get('event_id')
 
     if not event_id or not event_id.isdigit(): #Validating if the event ID is provided
@@ -85,12 +83,247 @@ def eventcustomerlist():
 
     return render_template("eventcustomerlist.html", event=event_details, customers=customerlist) # Rendering eventcustomerlist template
 
-
+#Route for all customers data 
 @app.route("/customers")
-def customers():
-    #List customer details.
-    return render_template("customers.html")  
+def customers_list(): 
+    cursor = getCursor() #Getting database cursor for specifoc route
+    
+    # Retrieving customers data sorted by family name and for the same last names, they are sorted by their age(yougest first)
+    qstr = "SELECT customer_id, CONCAT(first_name, ' ', family_name) AS full_name, email FROM customers ORDER BY family_name ASC, date_of_birth DESC;"
+    cursor.execute(qstr)
+    all_customers = cursor.fetchall()
+    return render_template("customers.html", all_customers=all_customers)
 
+
+@app.route("/customersearch", methods=["GET", "POST"])
+def customersearch():
+    cursor = getCursor() #Getting database cursor for specifoc route
+    search_results = [] #intialized an empty list to store the search results
+    search_term = ""
+
+    if request.method == "POST":
+        search_term = request.form.get('search_term', '').strip()
+        if search_term:
+            # Retrieving the data from database based on search requested by the user. This data will provide the customer data of customer searched by the user
+            qstr = """
+                SELECT customer_id, CONCAT(first_name, ' ', family_name) AS full_name, email, first_name, family_name, date_of_birth
+                FROM customers
+                WHERE first_name LIKE %s OR family_name LIKE %s
+                ORDER BY family_name ASC, first_name ASC;
+            """ 
+            search_param = f"%{search_term}%"
+            cursor.execute(qstr, (search_param, search_param))
+            search_results = cursor.fetchall() #Retrieved data into search_results
+            return render_template("customersearchresults.html", search_results=search_results, search_term=search_term) #Rendering the customersearch result template and passing search_result data
+        else:
+            flash("Please enter a search term.", "error")
+            # If no search term, redirect back to the search form page
+            return redirect(url_for('customersearch'))
+    
+    return render_template("customersearch.html") #Rendering form by using GEt request for just rendering template
+
+#Add Customer Route
+@app.route("/addcustomer", methods=["GET", "POST"])
+def addcustomer():
+    cursor = getCursor() #Getting database cursor for specifoc route
+    if request.method == "POST":
+        #Retrieving form data 
+        first_name = request.form.get('first_name', '').strip()
+        family_name = request.form.get('family_name', '').strip() #
+        date_of_birth_str = request.form.get('date_of_birth', '').strip()
+        email = request.form.get('email', '').strip()
+        errors = [] #Initialized error list to store errors
+
+        # Validation used for required fields
+        if not first_name:
+            errors.append("First Name is required.")
+        if not family_name:
+            errors.append("Family Name is required.")
+        if not date_of_birth_str:
+            errors.append("Date of Birth is required.")
+        if not email:
+            errors.append("Email Address is required.")
+
+        # Validating for email formating
+        if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            errors.append("Invalid Email Address format.")
+
+        # Validateing date of birth as per New Zealand Format and checking for the past date
+        date_of_birth = None
+        if date_of_birth_str:
+            try:
+                date_of_birth = datetime.strptime(date_of_birth_str, '%Y-%m-%d').date()
+                if date_of_birth >= date.today():
+                    errors.append("Date of Birth has to be in the past.")
+            except ValueError:
+                errors.append("Invalid Date of Birth format. Please use YYYY-MM-DD.")
+
+        # Check for unique email address
+        if email and not errors: 
+            qstr_check_email = "SELECT COUNT(*) AS count FROM customers WHERE email = %s;"
+            cursor.execute(qstr_check_email, (email,))
+            email_count = cursor.fetchone()['count']
+            if email_count > 0:
+                errors.append("An account with this email address already exists.") #Appending error to errors list
+
+        if errors:
+            for error in errors:
+                flash(error, "error")
+            return render_template("addcustomer.html",
+                                   first_name=first_name, family_name=family_name,
+                                   date_of_birth=date_of_birth_str, email=email) #Redering template if error occured
+        else:
+            # Finding the next available customer_id
+            qstr_next_id = "SELECT COALESCE(MAX(customer_id), 0) + 1 AS next_id FROM customers;"
+            cursor.execute(qstr_next_id)
+            next_customer_id = cursor.fetchone()['next_id']
+            
+            #inserting new customer to the database 
+            qstr_insert = """
+                INSERT INTO customers (customer_id, first_name, family_name, date_of_birth, email)
+                VALUES (%s, %s, %s, %s, %s); 
+            """ 
+            try:
+                cursor.execute(qstr_insert, (next_customer_id, first_name, family_name, date_of_birth, email))
+                flash("Customer added successfully!", "success")
+                return redirect(url_for('customers_list')) # Redirecting to customers list after adding
+            except MySQLdb.Error as e:
+                flash(f"Database error: Could not add customer. {e}", "error") #error handling
+                return render_template("addcustomer.html",
+                                       first_name=first_name, family_name=family_name,
+                                       date_of_birth=date_of_birth_str, email=email)
+
+    return render_template("addcustomer.html") 
+
+#Edit customer route 
+@app.route("/editcustomer/<int:customer_id>", methods=["GET", "POST"])
+def editcustomer(customer_id):
+    cursor = getCursor() #Getting database cursor for specifoc route
+    customer_data = None
+
+    if request.method == "GET":
+        #Retrieving form data 
+        qstr_select = "SELECT customer_id, first_name, family_name, date_of_birth, email FROM customers WHERE customer_id = %s;" # Removed phone
+        cursor.execute(qstr_select, (customer_id,))
+        customer_data = cursor.fetchone()
+
+        if not customer_data:
+            flash("Customer not found.", "error") #Error handling
+            return redirect(url_for('customers_list')) # Redirecting to all customers list
+
+        # Formatng the date for HTML input
+        if customer_data['date_of_birth']:
+            customer_data['date_of_birth'] = customer_data['date_of_birth'].strftime('%Y-%m-%d')
+
+    elif request.method == "POST":
+        first_name = request.form.get('first_name', '').strip()
+        family_name = request.form.get('family_name', '').strip()
+        date_of_birth_str = request.form.get('date_of_birth', '').strip()
+        email = request.form.get('email', '').strip()
+
+        errors = [] #Initialized error list
+
+        # Validation used for required fields
+        if not first_name:
+            errors.append("First Name is required.")
+        if not family_name:
+            errors.append("Family Name is required.")
+        if not date_of_birth_str:
+            errors.append("Date of Birth is required.")
+        if not email:
+            errors.append("Email Address is required.")
+
+        # Validating for email format
+        if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            errors.append("Invalid Email Address format.")
+
+        # Validateing date of birth as per New Zealand Format and checking for the past date
+        date_of_birth = None
+        if date_of_birth_str:
+            try:
+                date_of_birth = datetime.strptime(date_of_birth_str, '%Y-%m-%d').date()
+                if date_of_birth >= date.today():
+                    errors.append("Date of Birth must be in the past.")
+            except ValueError:
+                errors.append("Invalid Date of Birth format. Please use YYYY-MM-DD.")
+
+        # Checking for unique email address and current customer's email address is excluded
+        if email and not errors:
+            qstr_check_email = "SELECT COUNT(*) AS count FROM customers WHERE email = %s AND customer_id != %s;"
+            cursor.execute(qstr_check_email, (email, customer_id))
+            email_count = cursor.fetchone()['count']
+            if email_count > 0:
+                errors.append("An account with this email address already exists for another customer.")
+
+        if errors:
+            for error in errors:
+                flash(error, "error")
+            # Prepopulating the form for good user experience
+            customer_data = request.form.to_dict()
+            customer_data['customer_id'] = customer_id 
+            return render_template("editcustomer.html", customer_data=customer_data)
+        else:
+            qstr_update = """
+                UPDATE customers
+                SET first_name = %s, family_name = %s, date_of_birth = %s, email = %s
+                WHERE customer_id = %s;
+            """ 
+            try:
+                cursor.execute(qstr_update, (first_name, family_name, date_of_birth, email, customer_id)) # Removed phone
+                flash("Customer details updated successfully!", "success")
+                return redirect(url_for('customerticketsummary', customer_id=customer_id))
+            except MySQLdb.Error as e:
+                flash(f"Database error: Could not update customer. {e}", "error")
+                customer_data = request.form.to_dict()
+                customer_data['customer_id'] = customer_id
+                return render_template("editcustomer.html", customer_data=customer_data)
+
+    return render_template("editcustomer.html", customer_data=customer_data) # For GET request or if errors on POST
+
+#Customer ticket summary route
+@app.route("/customerticketsummary/<int:customer_id>")
+def customerticketsummary(customer_id):
+    cursor = getCursor()
+
+    # 1. Fetch Customer Details - now including date_of_birth and email
+    qstr_customer = """
+        SELECT customer_id, 
+               CONCAT(first_name, ' ', family_name) AS full_name, 
+               first_name, 
+               family_name,
+               date_of_birth,
+               email
+        FROM customers 
+        WHERE customer_id = %s;
+    """
+    cursor.execute(qstr_customer, (customer_id,))
+    customer_details = cursor.fetchone()
+
+    if not customer_details:
+        flash("Customer not found.", "error")
+        return redirect(url_for('customers_list')) # Redirect to the all customers list
+
+    # Format date of birth for display
+    if customer_details['date_of_birth']:
+        customer_details['date_of_birth'] = customer_details['date_of_birth'].strftime('%Y-%m-%d')
+
+    # 2. Fetch Customer's Ticket Purchases
+    qstr_purchases = """
+        SELECT e.event_name, e.event_date, ts.tickets_purchased
+        FROM ticket_sales ts
+        JOIN events e ON ts.event_id = e.event_id
+        WHERE ts.customer_id = %s
+        ORDER BY e.event_date DESC;
+    """
+    cursor.execute(qstr_purchases, (customer_id,))
+    customer_ticket_purchases = cursor.fetchall()
+
+    total_tickets_bought_by_customer = sum(purchase['tickets_purchased'] for purchase in customer_ticket_purchases)
+
+    return render_template("customerticketsummary.html",
+                           customer=customer_details,
+                           tickets=customer_ticket_purchases,
+                           total_tickets=total_tickets_bought_by_customer)
 
 @app.route("/futureevents")
 def futureevents():

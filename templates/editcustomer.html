@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Selwyn Event Ticketing - Edit Customer{% endblock %}
+
+{% block content %}
+    <h2>Edit Customer: {{ customer_data['first_name'] }} {{ customer_data['family_name'] }}</h2>
+
+    <form action="{{ url_for('editcustomer', customer_id=customer_data['customer_id']) }}" method="POST" class="needs-validation" novalidate>
+        <div class="mb-3">
+            <label for="first_name" class="form-label">First Name:</label>
+            <input type="text" class="form-control" id="first_name" name="first_name"
+                   value="{{ customer_data['first_name'] }}" required>
+            <div class="invalid-feedback">
+                Please provide the first name.
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="family_name" class="form-label">Family Name:</label>
+            <input type="text" class="form-control" id="family_name" name="family_name"
+                   value="{{ customer_data['family_name'] }}" required>
+            <div class="invalid-feedback">
+                Please provide the family name.
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="date_of_birth" class="form-label">Date of Birth:</label>
+            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth"
+                   value="{{ customer_data['date_of_birth'] }}" required>
+            <div class="invalid-feedback">
+                Please provide a date of birth.
+                </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="email" class="form-label">Email:</label>
+            <input type="email" class="form-control" id="email" name="email"
+                   value="{{ customer_data['email'] }}" required>
+            <div class="invalid-feedback">
+                Please provide a valid email address.
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Update Customer</button>
+        <a href="{{ url_for('customerticketsummary', customer_id=customer_data['customer_id']) }}" class="btn btn-secondary">Cancel</a>
+    </form>
+{% endblock %}

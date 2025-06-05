@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Selwyn Event Ticketing - Customer Search{% endblock %}
+
+{% block content %}
+    <h2>Search Customers</h2>
+
+    {# Flash messages are now handled dynamically in base.html #}
+
+    <form action="{{ url_for('customersearch') }}" method="POST" class="needs-validation" novalidate>
+        <div class="mb-3">
+            <label for="search_term" class="form-label">Search by First or Family Name:</label>
+            <input type="text" class="form-control" id="search_term" name="search_term" required>
+            <div class="invalid-feedback">
+                Please enter a search term.
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a href="{{ url_for('customersearch') }}" class="btn btn-secondary">Clear Search</a> {# Changed from "Cancel" to "Clear Search" #}
+        <a href="{{ url_for('addcustomer') }}" class="btn btn-success">Add New Customer</a> {# Added link to add customer #}
+    </form>
+{% endblock %}
