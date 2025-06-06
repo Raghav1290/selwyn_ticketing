@@ -237,7 +237,7 @@ def editcustomer(customer_id):
         if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             errors.append("Invalid Email Address format.")
 
-        # Validateing date of birth as per New Zealand Format and checking for the past date
+        # Validating date of birth as per New Zealand Format and checking for the past date
         date_of_birth = None
         if date_of_birth_str:
             try:
@@ -263,29 +263,30 @@ def editcustomer(customer_id):
             customer_data['customer_id'] = customer_id 
             return render_template("editcustomer.html", customer_data=customer_data)
         else:
+            # Updating customer data as per the user request
             qstr_update = """
                 UPDATE customers
                 SET first_name = %s, family_name = %s, date_of_birth = %s, email = %s
                 WHERE customer_id = %s;
             """ 
             try:
-                cursor.execute(qstr_update, (first_name, family_name, date_of_birth, email, customer_id)) # Removed phone
+                cursor.execute(qstr_update, (first_name, family_name, date_of_birth, email, customer_id))
                 flash("Customer details updated successfully!", "success")
                 return redirect(url_for('customerticketsummary', customer_id=customer_id))
             except MySQLdb.Error as e:
-                flash(f"Database error: Could not update customer. {e}", "error")
+                flash(f"Database error: Could not update customer. {e}", "error") #Flashing message if any error comes
                 customer_data = request.form.to_dict()
                 customer_data['customer_id'] = customer_id
                 return render_template("editcustomer.html", customer_data=customer_data)
 
-    return render_template("editcustomer.html", customer_data=customer_data) # For GET request or if errors on POST
+    return render_template("editcustomer.html", customer_data=customer_data) # Rending template editcustomer
 
 #Customer ticket summary route
 @app.route("/customerticketsummary/<int:customer_id>")
 def customerticketsummary(customer_id):
     cursor = getCursor()
 
-    # 1. Fetch Customer Details - now including date_of_birth and email
+    # Fetching customer details from database 
     qstr_customer = """
         SELECT customer_id, 
                CONCAT(first_name, ' ', family_name) AS full_name, 
@@ -301,13 +302,13 @@ def customerticketsummary(customer_id):
 
     if not customer_details:
         flash("Customer not found.", "error")
-        return redirect(url_for('customers_list')) # Redirect to the all customers list
+        return redirect(url_for('customers_list')) # Redirecting to customerList
 
-    # Format date of birth for display
+    # Formatting the date as per NZ way
     if customer_details['date_of_birth']:
         customer_details['date_of_birth'] = customer_details['date_of_birth'].strftime('%Y-%m-%d')
 
-    # 2. Fetch Customer's Ticket Purchases
+    # Fetching the details of tickets purchased by the customer 
     qstr_purchases = """
         SELECT e.event_name, e.event_date, ts.tickets_purchased
         FROM ticket_sales ts
@@ -323,7 +324,7 @@ def customerticketsummary(customer_id):
     return render_template("customerticketsummary.html",
                            customer=customer_details,
                            tickets=customer_ticket_purchases,
-                           total_tickets=total_tickets_bought_by_customer)
+                           total_tickets=total_tickets_bought_by_customer) # Rendering customerticketsummary template
 
 @app.route("/futureevents")
 def futureevents():

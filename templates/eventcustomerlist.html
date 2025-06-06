@@ -16,12 +16,12 @@
             </tr>
         </thead>
         <tbody>
-        {% for customer in customers %} { # Displaying the list of customers}
+        {% for customer in customers %}
             <tr>
                 <td><a href="/">{{ customer.full_name }}</a></td>
                 <td>{{ customer.ticket_quantity }}</td>
                 <td>
-                    <a href="/" class="btn btn-primary btn-sm">View Summary</a>
+                    <a href="{{ url_for('editcustomer', customer_id=customer['customer_id']) }}" class="btn btn-primary btn-sm">Edit</a>
                 </td>
             </tr>
         {% endfor %}
