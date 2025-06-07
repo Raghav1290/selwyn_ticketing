@@ -31,7 +31,7 @@ def getCursor():
         except MySQLdb.Error as e:
             
             #displaying error messages if the connection gets failed
-            flash(f"Database connection error: {e}", "error")
+            flash(f"Database connection error: {e}", "danger")
             raise
     cursor = connection.cursor(DictCursor)
     return cursor
@@ -116,7 +116,7 @@ def customersearch():
             search_results = cursor.fetchall() #Retrieved data into search_results
             return render_template("customersearchresults.html", search_results=search_results, search_term=search_term) #Rendering the customersearch result template and passing search_result data
         else:
-            flash("Please enter a search term.", "error")
+            flash("Please enter a search term.", "danger")
             # If no search term, redirect back to the search form page
             return redirect(url_for('customersearch'))
     
@@ -168,7 +168,7 @@ def addcustomer():
 
         if errors:
             for error in errors:
-                flash(error, "error")
+                flash(error, "danger")
             return render_template("addcustomer.html",
                                    first_name=first_name, family_name=family_name,
                                    date_of_birth=date_of_birth_str, email=email) #Redering template if error occured
@@ -188,7 +188,7 @@ def addcustomer():
                 flash("Customer added successfully!", "success")
                 return redirect(url_for('customers_list')) # Redirecting to customers list after adding
             except MySQLdb.Error as e:
-                flash(f"Database error: Could not add customer. {e}", "error") #error handling
+                flash(f"Database error: Could not add customer. {e}", "danger") #error handling
                 return render_template("addcustomer.html",
                                        first_name=first_name, family_name=family_name,
                                        date_of_birth=date_of_birth_str, email=email)
@@ -208,7 +208,7 @@ def editcustomer(customer_id):
         customer_data = cursor.fetchone()
 
         if not customer_data:
-            flash("Customer not found.", "error") #Error handling
+            flash("Customer not found.", "danger") #Error handling
             return redirect(url_for('customers_list')) # Redirecting to all customers list
 
         # Formatng the date for HTML input
@@ -257,7 +257,7 @@ def editcustomer(customer_id):
 
         if errors:
             for error in errors:
-                flash(error, "error")
+                flash(error, "danger")
             # Prepopulating the form for good user experience
             customer_data = request.form.to_dict()
             customer_data['customer_id'] = customer_id 
@@ -274,7 +274,7 @@ def editcustomer(customer_id):
                 flash("Customer details updated successfully!", "success")
                 return redirect(url_for('customerticketsummary', customer_id=customer_id))
             except MySQLdb.Error as e:
-                flash(f"Database error: Could not update customer. {e}", "error") #Flashing message if any error comes
+                flash(f"Database error: Could not update customer. {e}", "danger") #Flashing message if any error comes
                 customer_data = request.form.to_dict()
                 customer_data['customer_id'] = customer_id
                 return render_template("editcustomer.html", customer_data=customer_data)
@@ -284,7 +284,7 @@ def editcustomer(customer_id):
 #Customer ticket summary route
 @app.route("/customerticketsummary/<int:customer_id>")
 def customerticketsummary(customer_id):
-    cursor = getCursor()
+    cursor = getCursor() #Getting database cursor for specifoc route
 
     # Fetching customer details from database 
     qstr_customer = """
@@ -326,13 +326,164 @@ def customerticketsummary(customer_id):
                            tickets=customer_ticket_purchases,
                            total_tickets=total_tickets_bought_by_customer) # Rendering customerticketsummary template
 
+
+#Future Events Route used to display all the tickets and events availability in future
 @app.route("/futureevents")
 def futureevents():
-    #Future Events which still have tickets available.
-    return render_template("futureevents.html")  
+    cursor = getCursor() #Getting database cursor for specifoc route
+    # Retrieving future events data from the databse
+    qstr = """
+        SELECT e.event_id, e.event_name, e.event_date, e.capacity,
+               SUM(CASE WHEN ts.tickets_purchased IS NULL THEN 0 ELSE ts.tickets_purchased END) AS tickets_sold
+        FROM events e
+        LEFT JOIN ticket_sales ts ON e.event_id = ts.event_id
+        WHERE e.event_date > CURDATE()
+        GROUP BY e.event_id, e.event_name, e.event_date, e.capacity
+        HAVING (e.capacity - SUM(CASE WHEN ts.tickets_purchased IS NULL THEN 0 ELSE ts.tickets_purchased END)) > 0
+        ORDER BY e.event_date ASC;
+    """
+    cursor.execute(qstr)
+    future_events_data = cursor.fetchall() #Storing fetched data to future_events_data
+    return render_template("futureevents.html", future_events=future_events_data)
 
-
-@app.route("/tickets/buy")
+#Buy Tickets Route
+@app.route("/tickets/buy", methods=["GET", "POST"])
 def buytickets():
-    #Buy tickets
-    return render_template()
+    cursor = getCursor() #Getting database cursor for specifoc route
+    if request.method == "GET":
+        # Fetching available event tickets from database
+        qstr_events = """
+            SELECT e.event_id, e.event_name, e.event_date, e.capacity, e.age_restriction,
+                   SUM(CASE WHEN ts.tickets_purchased IS NULL THEN 0 ELSE ts.tickets_purchased END) AS tickets_sold
+            FROM events e
+            LEFT JOIN ticket_sales ts ON e.event_id = ts.event_id
+            WHERE e.event_date > CURDATE()
+            GROUP BY e.event_id, e.event_name, e.event_date, e.capacity, e.age_restriction
+            HAVING (e.capacity - SUM(CASE WHEN ts.tickets_purchased IS NULL THEN 0 ELSE ts.tickets_purchased END)) > 0
+            ORDER BY e.event_date ASC;
+        """
+        cursor.execute(qstr_events)
+        available_events = cursor.fetchall()
+
+        # Calculating the event tickets remaining
+        for event in available_events:
+            event['remaining_tickets'] = event['capacity'] - event['tickets_sold']
+
+        # Fetching the customer list from database
+        qstr_customers = "SELECT customer_id, CONCAT(first_name, ' ', family_name) AS full_name, date_of_birth FROM customers ORDER BY family_name ASC, first_name ASC;"
+        cursor.execute(qstr_customers)
+        customers_data = cursor.fetchall()
+
+        return render_template("buytickets.html", events=available_events, customers=customers_data) #Redering buytickets.html
+
+    elif request.method == "POST":
+        # Fetching user input
+        customer_id = request.form.get('customer_id')
+        event_id = request.form.get('event_id')
+        quantity_str = request.form.get('quantity')
+
+        errors = [] # List to store errors
+
+        # Validating the fields that are required
+        if not customer_id:
+            errors.append("Please select a customer.")
+        if not event_id:
+            errors.append("Please select an event.")
+        if not quantity_str:
+            errors.append("Number of tickets is required.")
+        
+        try:
+            quantity = int(quantity_str)
+            if quantity <= 0:
+                errors.append("Number of tickets must be at least 1.")
+        except ValueError:
+            errors.append("Invalid number of tickets.")
+            quantity = 0 # Setting quantity to 0 so that further calculation issues could be prevented
+
+        # Fetching event customer and details for validation ahead
+        customer_dob = None
+        event_age_restriction = None
+        event_capacity = 0
+        tickets_sold = 0
+
+        if customer_id and customer_id.isdigit():
+            qstr_customer_dob = "SELECT date_of_birth FROM customers WHERE customer_id = %s;"
+            cursor.execute(qstr_customer_dob, (customer_id,))
+            customer_data = cursor.fetchone()
+            if customer_data:
+                customer_dob = customer_data['date_of_birth']
+            else:
+                errors.append("Selected customer not found.")
+        
+        if event_id and event_id.isdigit():
+            qstr_event_details = """
+                SELECT e.age_restriction, e.capacity,
+                       SUM(CASE WHEN ts.tickets_purchased IS NULL THEN 0 ELSE ts.tickets_purchased END) AS tickets_sold
+                FROM events e
+                LEFT JOIN ticket_sales ts ON e.event_id = ts.event_id
+                WHERE e.event_id = %s
+                GROUP BY e.event_id, e.age_restriction, e.capacity;
+            """
+            cursor.execute(qstr_event_details, (event_id,))
+            event_details = cursor.fetchone()
+            if event_details:
+                event_age_restriction = event_details['age_restriction']
+                event_capacity = event_details['capacity']
+                tickets_sold = event_details['tickets_sold']
+            else:
+                errors.append("Selected event not found or has no available tickets.")
+
+        # Applying validations for age restriction
+        if customer_dob and event_age_restriction is not None:
+            today = date.today()
+            age = today.year - customer_dob.year - ((today.month, today.day) < (customer_dob.month, customer_dob.day))
+            if age < event_age_restriction:
+                errors.append(f"Customer is too young for this event. Minimum age required: {event_age_restriction}.")
+
+        # Validation for tickets which are available
+        tickets_remaining = event_capacity - tickets_sold
+        if quantity > tickets_remaining:
+            errors.append(f"Not enough tickets available. Only {tickets_remaining} tickets left.")
+
+
+        if errors:
+            for error in errors:
+                flash(error, "danger") #Flashing error messages if error ouccur
+
+            qstr_events_get = """
+                SELECT e.event_id, e.event_name, e.event_date, e.capacity, e.age_restriction,
+                       SUM(CASE WHEN ts.tickets_purchased IS NULL THEN 0 ELSE ts.tickets_purchased END) AS tickets_sold
+                FROM events e
+                LEFT JOIN ticket_sales ts ON e.event_id = ts.event_id
+                WHERE e.event_date > CURDATE()
+                GROUP BY e.event_id, e.event_name, e.event_date, e.capacity, e.age_restriction
+                HAVING (e.capacity - SUM(CASE WHEN ts.tickets_purchased IS NULL THEN 0 ELSE ts.tickets_purchased END)) > 0
+                ORDER BY e.event_date ASC;
+            """
+            cursor.execute(qstr_events_get)
+            available_events = cursor.fetchall()
+
+            for event in available_events:
+                event['remaining_tickets'] = event['capacity'] - event['tickets_sold']
+
+            qstr_customers_get = "SELECT customer_id, CONCAT(first_name, ' ', family_name) AS full_name, date_of_birth FROM customers ORDER BY family_name ASC, first_name ASC;"
+            cursor.execute(qstr_customers_get)
+            customers_data = cursor.fetchall()
+            
+            return render_template("buytickets.html", events=available_events, customers=customers_data, 
+                                   selected_customer_id=customer_id, selected_event_id=event_id, selected_quantity=quantity_str)
+        else:
+            # If all validations gets paased then continue with ticket purchase
+            try:
+                #updating tickets data in the database
+                qstr_insert_ticket = """
+                    INSERT INTO ticket_sales (customer_id, event_id, tickets_purchased)
+                    VALUES (%s, %s, %s);
+                """
+                cursor.execute(qstr_insert_ticket, (customer_id, event_id, quantity))
+                flash("Tickets purchased successfully!", "success")
+                return redirect(url_for('customerticketsummary', customer_id=customer_id)) #Reirecting to customersummary route
+            except MySQLdb.Error as e:
+                flash(f"Database error: Could not purchase tickets. {e}", "error") #Flashing error messages
+                return redirect(url_for('buytickets')) #Redirecting to buytickets route
+

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Selwyn Event Ticketing - Future Events{% endblock %}
+
+{% block content %}
+
+<h3>Upcoming Events with Available Tickets</h3>
+
+{% if future_events %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Event Name</th>
+                <th>Event Date</th>
+                <th>Tickets Remaining</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in future_events %}
+                <tr>
+                    <td>{{ event['event_name'] }}</td>
+                    <td>{{ event['event_date'].strftime('%d/%m/%Y') }}</td>
+                    <td>{{ event['capacity'] - event['tickets_sold'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No future events with available tickets at the moment.</p>
+{% endif %}
+
+{% endblock %}

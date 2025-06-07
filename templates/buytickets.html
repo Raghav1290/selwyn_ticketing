@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Selwyn Event Ticketing - Buy Tickets{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Buy Tickets</h2>
+
+    {# Flash messages are now handled dynamically in base.html #}
+
+    <form method="post" class="needs-validation" novalidate>
+        <div class="mb-3">
+            <label for="customer_id" class="form-label">Customer</label>
+            <select name="customer_id" id="customer_id" class="form-select" required>
+                <option value="" disabled {% if not selected_customer_id %}selected{% endif %}>Select a customer</option>
+                {% for customer in customers %}
+                    <option value="{{ customer.customer_id }}" {% if selected_customer_id and selected_customer_id == customer.customer_id %}selected{% endif %}>
+                        {{ customer.full_name }} (DOB: {{ customer.date_of_birth.strftime('%d/%m/%Y') }})
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="invalid-feedback">
+                Please select a customer.
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="event_id" class="form-label">Event</label>
+            <select name="event_id" id="event_id" class="form-select" required>
+                <option value="" disabled {% if not selected_event_id %}selected{% endif %}>Select an event</option>
+                {% for event in events %}
+                    <option value="{{ event.event_id }}" {% if selected_event_id and selected_event_id == event.event_id %}selected{% endif %}>
+                        {{ event.event_name }} ({{ event.event_date.strftime('%d/%m/%Y') }} – {{ event.remaining_tickets }} tickets left)
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="invalid-feedback">
+                Please select an event.
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="quantity" class="form-label">Number of Tickets</label>
+            <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="{{ selected_quantity if selected_quantity is defined else '' }}" required>
+            <div class="invalid-feedback">
+                Please enter a valid number of tickets (at least 1).
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Purchase Tickets</button>
+    </form>
+</div>
+{% endblock %}
