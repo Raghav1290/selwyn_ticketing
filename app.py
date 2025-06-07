@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 import MySQLdb
 from MySQLdb.cursors import DictCursor
 import connect
-import re # Regex used for email and phone validations
+import re # Regex used for email
 
 app = Flask(__name__)
 app.secret_key = 'raghav_secret_key_very_secure_key' # Setting secret key for session management and flash message
@@ -104,12 +104,13 @@ def customersearch():
     if request.method == "POST":
         search_term = request.form.get('search_term', '').strip()
         if search_term:
-            # Retrieving the data from database based on search requested by the user. This data will provide the customer data of customer searched by the user
+            # Retrieving the data from database based on search requested by the user. This data will provide the customer data of customer searched by the user and Retrieving customers data sorted by family name and for the same last names, they are sorted by their age(yougest first)
+
             qstr = """
                 SELECT customer_id, CONCAT(first_name, ' ', family_name) AS full_name, email, first_name, family_name, date_of_birth
                 FROM customers
                 WHERE first_name LIKE %s OR family_name LIKE %s
-                ORDER BY family_name ASC, first_name ASC;
+                ORDER BY family_name ASC, date_of_birth DESC;
             """ 
             search_param = f"%{search_term}%"
             cursor.execute(qstr, (search_param, search_param))
@@ -143,6 +144,20 @@ def addcustomer():
             errors.append("Date of Birth is required.")
         if not email:
             errors.append("Email Address is required.")
+
+        # Restricting user to enter spaces and numerics in first_name
+        if first_name:
+            if re.search(r'\d', first_name): # Check for any digit
+                errors.append("First Name cannot contain numbers.")
+            if ' ' in first_name: # Check for any space
+                errors.append("First Name cannot contain spaces.")
+
+        # Restricting user to enter spaces and numerics in family_name
+        if family_name:
+            if re.search(r'\d', family_name): # Check for any digit
+                errors.append("Family Name cannot contain numbers.")
+            if ' ' in family_name: # Check for any space
+                errors.append("Family Name cannot contain spaces.")
 
         # Validating for email formating
         if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
@@ -188,7 +203,7 @@ def addcustomer():
                 flash("Customer added successfully!", "success")
                 return redirect(url_for('customers_list')) # Redirecting to customers list after adding
             except MySQLdb.Error as e:
-                flash(f"Database error: Could not add customer. {e}", "danger") #error handling
+                errors.append("Database error: Could not add customer.")
                 return render_template("addcustomer.html",
                                        first_name=first_name, family_name=family_name,
                                        date_of_birth=date_of_birth_str, email=email)
@@ -203,7 +218,7 @@ def editcustomer(customer_id):
 
     if request.method == "GET":
         #Retrieving form data 
-        qstr_select = "SELECT customer_id, first_name, family_name, date_of_birth, email FROM customers WHERE customer_id = %s;" # Removed phone
+        qstr_select = "SELECT customer_id, first_name, family_name, date_of_birth, email FROM customers WHERE customer_id = %s;" 
         cursor.execute(qstr_select, (customer_id,))
         customer_data = cursor.fetchone()
 
@@ -232,6 +247,20 @@ def editcustomer(customer_id):
             errors.append("Date of Birth is required.")
         if not email:
             errors.append("Email Address is required.")
+
+        # Restricting user to enter spaces and numerics in first_name
+        if first_name:
+            if re.search(r'\d', first_name): # Check for any digit
+                errors.append("First Name cannot contain numbers.")
+            if ' ' in first_name: # Check for any space
+                errors.append("First Name cannot contain spaces.")
+
+        # Restricting user to enter spaces and numerics in family_name
+        if family_name:
+            if re.search(r'\d', family_name): # Check for any digit
+                errors.append("Family Name cannot contain numbers.")
+            if ' ' in family_name: # Check for any space
+                errors.append("Family Name cannot contain spaces.")
 
         # Validating for email format
         if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
@@ -274,7 +303,7 @@ def editcustomer(customer_id):
                 flash("Customer details updated successfully!", "success")
                 return redirect(url_for('customerticketsummary', customer_id=customer_id))
             except MySQLdb.Error as e:
-                flash(f"Database error: Could not update customer. {e}", "danger") #Flashing message if any error comes
+                errors.append("Database error: Could not update customer.")
                 customer_data = request.form.to_dict()
                 customer_data['customer_id'] = customer_id
                 return render_template("editcustomer.html", customer_data=customer_data)
@@ -484,6 +513,6 @@ def buytickets():
                 flash("Tickets purchased successfully!", "success")
                 return redirect(url_for('customerticketsummary', customer_id=customer_id)) #Reirecting to customersummary route
             except MySQLdb.Error as e:
-                flash(f"Database error: Could not purchase tickets. {e}", "error") #Flashing error messages
+                errors.append("Database error: Could not purchase tickets.")
                 return redirect(url_for('buytickets')) #Redirecting to buytickets route
 
