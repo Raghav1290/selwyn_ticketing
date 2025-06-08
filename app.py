@@ -59,7 +59,7 @@ def eventcustomerlist():
     event_id = request.form.get('event_id')
 
     if not event_id or not event_id.isdigit(): #Validating if the event ID is provided
-        flash("Invalid event selected.", 'error')
+        flash("Please select a valid event.", 'error')
         return redirect(url_for('events'))
 
     qstr_event = "SELECT event_name, event_date FROM events WHERE event_id = %s;" #Selecting event data based on event ID selected by the user
@@ -72,7 +72,7 @@ def eventcustomerlist():
 
     # Sorting the customer name alphabetical by family name, then again by date of birth (youngest first)
     qstr_customers = """
-        SELECT c.customer_id, CONCAT(c.first_name, ' ', c.family_name) AS full_name, c.date_of_birth, ts.tickets_purchased AS ticket_quantity
+        SELECT c.customer_id, CONCAT(c.first_name, ' ', c.family_name) AS full_name, c.email, c.date_of_birth, ts.tickets_purchased AS ticket_quantity
         FROM customers c
         JOIN ticket_sales ts ON c.customer_id = ts.customer_id
         WHERE ts.event_id = %s
@@ -80,7 +80,6 @@ def eventcustomerlist():
     """
     cursor.execute(qstr_customers, (event_id,))
     customerlist = cursor.fetchall()
-
     return render_template("eventcustomerlist.html", event=event_details, customers=customerlist) # Rendering eventcustomerlist template
 
 #Route for all customers data 
@@ -89,7 +88,7 @@ def customers_list():
     cursor = getCursor() #Getting database cursor for specifoc route
     
     # Retrieving customers data sorted by family name and for the same last names, they are sorted by their age(yougest first)
-    qstr = "SELECT customer_id, CONCAT(first_name, ' ', family_name) AS full_name, email FROM customers ORDER BY family_name ASC, date_of_birth DESC;"
+    qstr = "SELECT customer_id, CONCAT(first_name, ' ', family_name) AS full_name, email, date_of_birth FROM customers ORDER BY family_name ASC, date_of_birth DESC;"
     cursor.execute(qstr)
     all_customers = cursor.fetchall()
     return render_template("customers.html", all_customers=all_customers)
@@ -107,7 +106,7 @@ def customersearch():
             # Retrieving the data from database based on search requested by the user. This data will provide the customer data of customer searched by the user and Retrieving customers data sorted by family name and for the same last names, they are sorted by their age(yougest first)
 
             qstr = """
-                SELECT customer_id, CONCAT(first_name, ' ', family_name) AS full_name, email, first_name, family_name, date_of_birth
+                SELECT customer_id, first_name, family_name, email, first_name, family_name, date_of_birth
                 FROM customers
                 WHERE first_name LIKE %s OR family_name LIKE %s
                 ORDER BY family_name ASC, date_of_birth DESC;
@@ -117,7 +116,7 @@ def customersearch():
             search_results = cursor.fetchall() #Retrieved data into search_results
             return render_template("customersearchresults.html", search_results=search_results, search_term=search_term) #Rendering the customersearch result template and passing search_result data
         else:
-            flash("Please enter a search term.", "danger")
+            flash("Please enter a search term. It cannot be empty", "danger")
             # If no search term, redirect back to the search form page
             return redirect(url_for('customersearch'))
     
@@ -148,20 +147,20 @@ def addcustomer():
         # Restricting user to enter spaces and numerics in first_name
         if first_name:
             if re.search(r'\d', first_name): # Check for any digit
-                errors.append("First Name cannot contain numbers.")
+                errors.append("First Name cannot have numbers.")
             if ' ' in first_name: # Check for any space
-                errors.append("First Name cannot contain spaces.")
+                errors.append("First Name cannot have spaces.")
 
         # Restricting user to enter spaces and numerics in family_name
         if family_name:
             if re.search(r'\d', family_name): # Check for any digit
-                errors.append("Family Name cannot contain numbers.")
+                errors.append("Family Name cannot have numbers.")
             if ' ' in family_name: # Check for any space
-                errors.append("Family Name cannot contain spaces.")
+                errors.append("Family Name cannot have spaces.")
 
         # Validating for email formating
         if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-            errors.append("Invalid Email Address format.")
+            errors.append("Please enter a valid Email Address format.")
 
         # Validateing date of birth as per New Zealand Format and checking for the past date
         date_of_birth = None
@@ -171,7 +170,7 @@ def addcustomer():
                 if date_of_birth >= date.today():
                     errors.append("Date of Birth has to be in the past.")
             except ValueError:
-                errors.append("Invalid Date of Birth format. Please use YYYY-MM-DD.")
+                errors.append("Please enter a valid Date of Birth format. Please use YYYY-MM-DD.")
 
         # Check for unique email address
         if email and not errors: 
@@ -179,7 +178,7 @@ def addcustomer():
             cursor.execute(qstr_check_email, (email,))
             email_count = cursor.fetchone()['count']
             if email_count > 0:
-                errors.append("An account with this email address already exists.") #Appending error to errors list
+                errors.append("An account with same email already exist.") #Appending error to errors list
 
         if errors:
             for error in errors:
@@ -251,20 +250,20 @@ def editcustomer(customer_id):
         # Restricting user to enter spaces and numerics in first_name
         if first_name:
             if re.search(r'\d', first_name): # Check for any digit
-                errors.append("First Name cannot contain numbers.")
+                errors.append("First Name cannot have numbers.")
             if ' ' in first_name: # Check for any space
-                errors.append("First Name cannot contain spaces.")
+                errors.append("First Name cannot have spaces.")
 
         # Restricting user to enter spaces and numerics in family_name
         if family_name:
             if re.search(r'\d', family_name): # Check for any digit
-                errors.append("Family Name cannot contain numbers.")
+                errors.append("Family Name cannot have numbers.")
             if ' ' in family_name: # Check for any space
-                errors.append("Family Name cannot contain spaces.")
+                errors.append("Family Name cannot have spaces.")
 
         # Validating for email format
         if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-            errors.append("Invalid Email Address format.")
+            errors.append("Please enter a valid Email Address format.")
 
         # Validating date of birth as per New Zealand Format and checking for the past date
         date_of_birth = None
@@ -272,9 +271,9 @@ def editcustomer(customer_id):
             try:
                 date_of_birth = datetime.strptime(date_of_birth_str, '%Y-%m-%d').date()
                 if date_of_birth >= date.today():
-                    errors.append("Date of Birth must be in the past.")
+                    errors.append("Please don't enter a future date. It should be in past.")
             except ValueError:
-                errors.append("Invalid Date of Birth format. Please use YYYY-MM-DD.")
+                errors.append("The Date of Birth format is not valid. Please use YYYY-MM-DD.")
 
         # Checking for unique email address and current customer's email address is excluded
         if email and not errors:
@@ -282,7 +281,7 @@ def editcustomer(customer_id):
             cursor.execute(qstr_check_email, (email, customer_id))
             email_count = cursor.fetchone()['count']
             if email_count > 0:
-                errors.append("An account with this email address already exists for another customer.")
+                errors.append("Account with same email already exist.")
 
         if errors:
             for error in errors:
@@ -332,10 +331,6 @@ def customerticketsummary(customer_id):
     if not customer_details:
         flash("Customer not found.", "error")
         return redirect(url_for('customers_list')) # Redirecting to customerList
-
-    # Formatting the date as per NZ way
-    if customer_details['date_of_birth']:
-        customer_details['date_of_birth'] = customer_details['date_of_birth'].strftime('%Y-%m-%d')
 
     # Fetching the details of tickets purchased by the customer 
     qstr_purchases = """
@@ -415,18 +410,18 @@ def buytickets():
 
         # Validating the fields that are required
         if not customer_id:
-            errors.append("Please select a customer.")
+            errors.append("Please select a customer to proceed.")
         if not event_id:
-            errors.append("Please select an event.")
+            errors.append("Please select an event to proceed.")
         if not quantity_str:
-            errors.append("Number of tickets is required.")
+            errors.append("Number of tickets is required to proceed.")
         
         try:
             quantity = int(quantity_str)
             if quantity <= 0:
-                errors.append("Number of tickets must be at least 1.")
+                errors.append("Please select atleast 1 ticket.")
         except ValueError:
-            errors.append("Invalid number of tickets.")
+            errors.append("Please enter valid number of tickets.")
             quantity = 0 # Setting quantity to 0 so that further calculation issues could be prevented
 
         # Fetching event customer and details for validation ahead
@@ -442,7 +437,7 @@ def buytickets():
             if customer_data:
                 customer_dob = customer_data['date_of_birth']
             else:
-                errors.append("Selected customer not found.")
+                errors.append("Customer not found")
         
         if event_id and event_id.isdigit():
             qstr_event_details = """
@@ -460,19 +455,19 @@ def buytickets():
                 event_capacity = event_details['capacity']
                 tickets_sold = event_details['tickets_sold']
             else:
-                errors.append("Selected event not found or has no available tickets.")
+                errors.append("There are no available ticket or the event is not found.")
 
         # Applying validations for age restriction
         if customer_dob and event_age_restriction is not None:
             today = date.today()
             age = today.year - customer_dob.year - ((today.month, today.day) < (customer_dob.month, customer_dob.day))
             if age < event_age_restriction:
-                errors.append(f"Customer is too young for this event. Minimum age required: {event_age_restriction}.")
+                errors.append(f"Customer is very young for this event. Minimum age required: {event_age_restriction}.")
 
         # Validation for tickets which are available
         tickets_remaining = event_capacity - tickets_sold
         if quantity > tickets_remaining:
-            errors.append(f"Not enough tickets available. Only {tickets_remaining} tickets left.")
+            errors.append(f"There are not enough tickets available. Only {tickets_remaining} tickets left.")
 
 
         if errors:
@@ -513,6 +508,6 @@ def buytickets():
                 flash("Tickets purchased successfully!", "success")
                 return redirect(url_for('customerticketsummary', customer_id=customer_id)) #Reirecting to customersummary route
             except MySQLdb.Error as e:
-                errors.append("Database error: Could not purchase tickets.")
+                errors.append("Database error: Unable to purchase tickets.")
                 return redirect(url_for('buytickets')) #Redirecting to buytickets route
 

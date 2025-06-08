@@ -11,6 +11,8 @@
         <thead>
             <tr>
                 <th>Customer Name</th> 
+                <th>Date Of Birth</th>
+                <th>Email</th>
                 <th>Tickets Bought</th>
                 <th>Action</th>
             </tr>
@@ -19,6 +21,8 @@
         {% for customer in customers %}
             <tr>
                 <td><a href="{{ url_for('customerticketsummary', customer_id=customer.customer_id) }}">{{ customer.full_name }}</a></td>
+                <td>{{ customer.date_of_birth.strftime('%d/%m/%Y') }}</td>
+                <td>{{ customer['email'] }}</td>
                 <td>{{ customer.ticket_quantity }}</td>
                 <td>
                     <a href="{{ url_for('editcustomer', customer_id=customer['customer_id']) }}" class="btn btn-primary btn-sm">Edit</a>

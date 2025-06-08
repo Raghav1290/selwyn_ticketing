@@ -9,8 +9,8 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Full Name</th>
-                    <th>Customer ID</th>
+                    <th>First Name</th>
+                    <th>Family Name</th>
                     <th>Date Of Birth</th>
                     <th>Email</th>
                     <th>Actions</th> </tr>
@@ -18,9 +18,9 @@
             <tbody>
                 {% for customer in search_results %}
                 <tr>
-                    <td><a href="{{ url_for('customerticketsummary', customer_id=customer.customer_id) }}">{{ customer.full_name }}</a></td>        
-                    <td>{{ customer['customer_id'] }}</td>
-                    <td>{{ customer.date_of_birth }}</td>
+                    <td>{{ customer.first_name }}</td>   
+                    <td>{{ customer.family_name }}</td>             
+                    <td>{{ customer.date_of_birth.strftime('%d/%m/%Y') }}</td>
                     <td>{{ customer['email'] }}</td>
                     <td>
                         <a href="{{ url_for('editcustomer', customer_id=customer['customer_id']) }}" class="btn btn-warning btn-sm">Edit</a>
