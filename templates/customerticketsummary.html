@@ -1,6 +1,11 @@
+<!--  Using 'base.html' as the parent template with the help of Jinja  -->
 {% extends "base.html" %}
+<!--  Block to display the title  -->
+
+<!-- Content block to display customer ticket summary -->
 {% block content %}
 <div class="container mt-4">
+    <!-- Customer full name -->
     <h2>{{ customer.full_name }}</h2>
 
     <div class="card mb-4">
@@ -8,18 +13,19 @@
             <h5 class="card-title">Customer Details</h5>
             <div class="row">
                 <div class="col-md-6">
+                    <!-- Customer details rendering -->
                     <p><strong>First Name:</strong> {{ customer.first_name }}</p>
                     <p><strong>Family Name:</strong> {{ customer.family_name }}</p>
-                    <p><strong>Date of Birth:</strong> {{ customer.date_of_birth.strftime('%d/%m/%Y') }}</p>
                 </div>
                 <div class="col-md-6">
                     <p><strong>Email:</strong> {{ customer.email }}</p>
-                    <p><strong>Customer ID:</strong> {{ customer.customer_id }}</p>
+                    <p><strong>Date of Birth:</strong> {{ customer.date_of_birth.strftime('%d/%m/%Y') }}</p>
                 </div>
             </div>
-        </div>  
+        </div>
     </div>
 
+    <!-- Displaying tickets purchased for events -->
     <div class="card">
         <div class="card-body">
             <h5 class="card-title">Ticket Purchases</h5>
@@ -35,23 +41,28 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for ticket in tickets %}
+                    <!-- Looping through each ticket data -->
+                    {% for ticket in tickets %}
                     <tr>
                         <td>{{ ticket.event_name }}</td>
                         <td>{{ ticket.event_date.strftime('%d/%m/%Y') }}</td>
                         <td>{{ ticket.tickets_purchased }}</td>
                     </tr>
-                {% endfor %}
+                    {% endfor %}
                 </tbody>
             </table>
+            <!-- If there is not ticket purchased -->
             {% else %}
-                <p>No tickets purchased yet.</p>
+            <p>No tickets purchased yet.</p>
             {% endif %}
         </div>
     </div>
 
     <div class="mt-3">
-        <a href="{{ url_for('editcustomer', customer_id=customer.customer_id) }}" class="btn btn-primary">Edit Customer Details</a>
+        <!-- Button to navigate to edit customer page -->
+        <a href="{{ url_for('editcustomer', customer_id=customer.customer_id) }}" class="btn btn-primary">Edit Customer
+            Details</a>
+        <!-- Button to navigate to customer list -->
         <a href="{{ url_for('customers_list') }}" class="btn btn-secondary">Back to Customer List</a>
     </div>
 </div>

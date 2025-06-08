@@ -1,16 +1,23 @@
+<!--  Using 'base.html' as the parent template with the help of Jinja  -->
 {% extends "base.html" %}
 
+<!--  Block to display the title  -->
 {% block title %}Selwyn Event Ticketing - Home {% endblock %}
 
+<!-- Block content display homepage data -->
 {% block content %}
 <div class="container align-middle">
-    <h1 class="text-center">Kia Ora</h1>
-    <h2 class="text-center">Welcome to Selwyn Ticket Management System</h2>
-    <p class="text-center">The best stop to book your tickets of any event. Choose from the list of events</p>
-    <div class="text-center">
-      <a href="{{ url_for('events') }}" class="btn btn-success align-center">Let's get started</a>
-    </div>
-    <img class="rounded mx-auto d-block" src="{{ url_for('static', filename='events.jpg') }}" alt="Selwyn Event Ticketing Logo">
+  <h1 class="text-center">Kia Ora</h1>
+  <h2 class="text-center">Welcome to Selwyn Ticket Management System</h2>
+  <p class="text-center">The best stop to book your tickets of any event. Choose from the list of events</p>
+  <div class="text-center">
+    <!-- Link for the events page -->
+    <a href="{{ url_for('events') }}" class="btn btn-success align-center">Let's get started</a>
+  </div>
+  <!-- Homepage Image -->
+  <img class="rounded mx-auto d-block"
+    src="https://t4.ftcdn.net/jpg/02/16/94/65/360_F_216946587_rmug8FCNgpDCPQlstiCJ0CAXJ2sqPRU7.jpg"
+    alt="Selwyn Event Ticketing Logo">
 </div>
 
 {% endblock %}

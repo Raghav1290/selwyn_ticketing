@@ -1,20 +1,27 @@
+<!--  Using 'base.html' as the parent template with the help of Jinja  -->
 {% extends "base.html" %}
 
+<!--  Block to display the title  -->
 {% block title %}Selwyn Event Ticketing - Customer Search{% endblock %}
 
 {% block content %}
+
+    <!-- Page Heading -->
     <h2>Search Customers</h2>
 
     {# Flash messages are now handled dynamically in base.html #}
 
+    <!-- Form used to search customers -->
     <form action="{{ url_for('customersearch') }}" method="POST" class="needs-validation" novalidate>
         <div class="mb-3">
             <label for="search_term" class="form-label">Search by First or Family Name:</label>
             <input type="text" class="form-control" id="search_term" name="search_term" required>
+            <!-- If no user input -->
             <div class="invalid-feedback">
                 Please enter a search term.
             </div>
         </div>
+        <!-- Bootstrp buttons to search, clear search input and add new customer -->
         <button type="submit" class="btn btn-primary">Search</button>
         <a href="{{ url_for('customersearch') }}" class="btn btn-secondary">Clear Search</a>
         <a href="{{ url_for('addcustomer') }}" class="btn btn-success">Add New Customer</a>

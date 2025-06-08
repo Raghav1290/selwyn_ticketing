@@ -1,4 +1,7 @@
+<!--  Using 'base.html' as the parent template with the help of Jinja  -->
 {% extends "base.html" %}
+
+<!--  Block to display the title  -->
 {% block title %}Selwyn Event Ticketing - Event Customer List{% endblock %}
 {% block content %}
 <div class="container mt-4">
@@ -6,11 +9,12 @@
 
     {# Flash messages are being handled dynamically in base.html #}
 
+    <!-- If condition for not null customer data -->
     {% if customers %}
     <table class="table table-bordered table-striped mt-3">
         <thead>
             <tr>
-                <th>Customer Name</th> 
+                <th>Customer Name</th>
                 <th>Date Of Birth</th>
                 <th>Email</th>
                 <th>Tickets Bought</th>
@@ -18,22 +22,31 @@
             </tr>
         </thead>
         <tbody>
-        {% for customer in customers %}
+
+            <!-- Looping through customers data -->
+            {% for customer in customers %}
             <tr>
-                <td><a href="{{ url_for('customerticketsummary', customer_id=customer.customer_id) }}">{{ customer.full_name }}</a></td>
+                <td><a href="{{ url_for('customerticketsummary', customer_id=customer.customer_id) }}">{{
+                        customer.full_name }}</a></td>
                 <td>{{ customer.date_of_birth.strftime('%d/%m/%Y') }}</td>
                 <td>{{ customer['email'] }}</td>
                 <td>{{ customer.ticket_quantity }}</td>
                 <td>
-                    <a href="{{ url_for('editcustomer', customer_id=customer['customer_id']) }}" class="btn btn-primary btn-sm">Edit</a>
+                    <a href="{{ url_for('editcustomer', customer_id=customer['customer_id']) }}"
+                        class="btn btn-primary btn-sm">Edit</a>
                 </td>
             </tr>
-        {% endfor %}
+            {% endfor %}
         </tbody>
     </table>
+
+
+    <!-- If there is no customer -->
     {% else %}
-        <p>No customers have purchased tickets for this event.</p>
+    <p>No customers have purchased tickets for this event.</p>
     {% endif %}
+
+    <!-- Button to navigate back to events -->
     <a href="{{ url_for('events') }}" class="btn btn-secondary mt-3">Back to Events</a>
 </div>
 {% endblock %}

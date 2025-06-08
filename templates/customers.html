@@ -1,41 +1,55 @@
+<!--  Using 'base.html' as the parent template with the help of Jinja  -->
 {% extends "base.html" %}
+
+<!--  Block to display the title  -->
 
 {% block title %}Selwyn Event Ticketing - All Customers{% endblock %}
 
 {% block content %}
-    <h2 class="mb-4">All Customers</h2>
-    <p>
-        <a href="{{ url_for('addcustomer') }}" class="btn btn-success">Add New Customer</a>
-        <a href="{{ url_for('customersearch') }}" class="btn btn-warning">Search Customers</a>
-    </p>
 
-    {% if all_customers %}
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Full Name</th>
-                        <th>Date Of Birth</th>
-                        <th>Email</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for customer in all_customers %}
-                        <tr>
-                            <td><a href="{{ url_for('customerticketsummary', customer_id=customer.customer_id) }}">{{ customer.full_name }}</a></td>
-                            <td>{{ customer.date_of_birth.strftime('%d/%m/%Y') }}</td>
-                            <td>{{ customer['email'] }}</td>
-                            <td>
-                                <a href="{{ url_for('editcustomer', customer_id=customer['customer_id']) }}" class="btn btn-info btn-sm">Edit</a>
-                                <a href="{{ url_for('customerticketsummary', customer_id=customer['customer_id']) }}" class="btn btn-secondary btn-sm">Summary</a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <p>No customers found.</p>
-    {% endif %}
+<!-- Page Heading -->
+<h2 class="mb-4">All Customers</h2>
+<p>
+    <!-- Bootstrap buttons to add new customer and search customer -->
+    <a href="{{ url_for('addcustomer') }}" class="btn btn-success">Add New Customer</a>
+    <a href="{{ url_for('customersearch') }}" class="btn btn-warning">Search Customers</a>
+</p>
+
+<!-- If there is data in all_customer variable -->
+{% if all_customers %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Full Name</th>
+                <th>Date Of Birth</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            <!-- Looping through each customers -->
+            {% for customer in all_customers %}
+            <tr>
+                <td><a href="{{ url_for('customerticketsummary', customer_id=customer.customer_id) }}">{{
+                        customer.full_name }}</a></td>
+                <td>{{ customer.date_of_birth.strftime('%d/%m/%Y') }}</td>
+                <td>{{ customer['email'] }}</td>
+                <td>
+                    <!-- Bootstrap buttons to navigate to customer edit and summary page -->
+                    <a href="{{ url_for('editcustomer', customer_id=customer['customer_id']) }}"
+                        class="btn btn-info btn-sm">Edit</a>
+                    <a href="{{ url_for('customerticketsummary', customer_id=customer['customer_id']) }}"
+                        class="btn btn-secondary btn-sm">Summary</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<!-- If there is no customer found -->
+{% else %}
+<p>No customers found.</p>
+{% endif %}
 {% endblock %}

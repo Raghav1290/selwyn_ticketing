@@ -1,39 +1,49 @@
+<!--  Using 'base.html' as the parent template with the help of Jinja  -->
 {% extends "base.html" %}
 
+<!--  Block to display the title  -->
 {% block title %}Selwyn Event Ticketing - Customer Search Results{% endblock %}
 
+<!-- Content block to display customer search result -->
 {% block content %}
-    <h2>Customer Search Results for "{{ search_term }}"</h2>
+<h2>Customer Search Results for "{{ search_term }}"</h2>
 
-    {% if search_results %}
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>First Name</th>
-                    <th>Family Name</th>
-                    <th>Date Of Birth</th>
-                    <th>Email</th>
-                    <th>Actions</th> </tr>
-            </thead>
-            <tbody>
-                {% for customer in search_results %}
-                <tr>
-                    <td>{{ customer.first_name }}</td>   
-                    <td>{{ customer.family_name }}</td>             
-                    <td>{{ customer.date_of_birth.strftime('%d/%m/%Y') }}</td>
-                    <td>{{ customer['email'] }}</td>
-                    <td>
-                        <a href="{{ url_for('editcustomer', customer_id=customer['customer_id']) }}" class="btn btn-warning btn-sm">Edit</a>
-                        <a href="{{ url_for('customerticketsummary', customer_id=customer['customer_id']) }}" class="btn btn-info btn-sm">Summary</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>No customers found matching "{{ search_term }}".</p>
-    {% endif %}
+<!-- If search result variable have data -->
+{% if search_results %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>First Name</th>
+            <th>Family Name</th>
+            <th>Date Of Birth</th>
+            <th>Email</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Looping through each search results data -->
+        {% for customer in search_results %}
+        <tr>
+            <td>{{ customer.first_name }}</td>
+            <td>{{ customer.family_name }}</td>
+            <td>{{ customer.date_of_birth.strftime('%d/%m/%Y') }}</td>
+            <td>{{ customer['email'] }}</td>
+            <td>
+                <!-- Buttons for navigation to edit and summary page -->
+                <a href="{{ url_for('editcustomer', customer_id=customer['customer_id']) }}"
+                    class="btn btn-warning btn-sm">Edit</a>
+                <a href="{{ url_for('customerticketsummary', customer_id=customer['customer_id']) }}"
+                    class="btn btn-info btn-sm">Summary</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<!-- If there is no customer that matched user input -->
+{% else %}
+<p>No customers found matching "{{ search_term }}".</p>
+{% endif %}
 
-    <p><a href="{{ url_for('customersearch') }}" class="btn btn-secondary">New Search</a></p>
+<p><a href="{{ url_for('customersearch') }}" class="btn btn-secondary">New Search</a></p>
 
 {% endblock %}

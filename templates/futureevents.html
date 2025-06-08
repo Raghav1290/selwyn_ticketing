@@ -1,32 +1,40 @@
+<!--  Using 'base.html' as the parent template with the help of Jinja  -->
 {% extends "base.html" %}
 
+<!--  Block to display the title  -->
 {% block title %}Selwyn Event Ticketing - Future Events{% endblock %}
 
+<!-- Content block to display future events data -->
 {% block content %}
 
+<!-- Page Heading -->
 <h3>Upcoming Events with Available Tickets</h3>
 
+<!-- Looping through future events data -->
 {% if future_events %}
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Event Name</th>
-                <th>Event Date</th>
-                <th>Tickets Remaining</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for event in future_events %}
-                <tr>
-                    <td>{{ event['event_name'] }}</td>
-                    <td>{{ event['event_date'].strftime('%d/%m/%Y') }}</td>
-                    <td>{{ event['capacity'] - event['tickets_sold'] }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Event Name</th>
+            <th>Event Date</th>
+            <th>Tickets Remaining</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for event in future_events %}
+        <tr>
+            <td>{{ event['event_name'] }}</td>
+            <td>{{ event['event_date'].strftime('%d/%m/%Y') }}</td>
+            <td>{{ event['capacity'] - event['tickets_sold'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- If there is no future events available -->
 {% else %}
-    <p>No future events with available tickets at the moment.</p>
+<p>No future events with available tickets at the moment.</p>
 {% endif %}
 
 {% endblock %}

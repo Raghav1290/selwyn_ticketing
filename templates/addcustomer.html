@@ -1,43 +1,54 @@
+<!--  Using 'base.html' as the parent template with the help of Jinja  -->
 {% extends "base.html" %}
+
+<!--  Block to display the title  -->
 {% block title %}Selwyn Event Ticketing - Add New Customer{% endblock %}
 {% block content %}
 <div class="container mt-4">
+    <!-- Page Heading -->
     <h2>Add New Customer</h2>
 
+    <!-- Using form to take user input to add and validate customers -->
     <form method="post" class="needs-validation" novalidate>
         <div class="mb-3">
             <label for="first_name" class="form-label">First Name</label>
-            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ first_name if first_name is defined else '' }}" required>
+            <input type="text" class="form-control" id="first_name" name="first_name"
+                value="{{ first_name if first_name is defined else '' }}" required>
             <div class="invalid-feedback">
-                Please provide a first name.
+                Please provide a first name. {# Bootstrap validation #}
             </div>
         </div>
 
         <div class="mb-3">
             <label for="family_name" class="form-label">Family Name</label>
-            <input type="text" class="form-control" id="family_name" name="family_name" value="{{ family_name if family_name is defined else '' }}" required>
+            <input type="text" class="form-control" id="family_name" name="family_name"
+                value="{{ family_name if family_name is defined else '' }}" required>
             <div class="invalid-feedback">
-                Please provide a family name.
+                Please provide a family name. {# Bootstrap validation #}
             </div>
         </div>
 
         <div class="mb-3">
             <label for="date_of_birth" class="form-label">Date of Birth</label>
-            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" value="{{ date_of_birth if date_of_birth is defined else '' }}" required>
+            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth"
+                value="{{ date_of_birth if date_of_birth is defined else '' }}" required>
             <div class="invalid-feedback">
-                Please provide a valid date of birth.
+                Please provide a valid date of birth. {# Bootstrap validation #}
             </div>
         </div>
 
         <div class="mb-3">
             <label for="email" class="form-label">Email Address</label>
-            <input type="email" class="form-control" id="email" name="email" value="{{ email if email is defined else '' }}" required>
+            <input type="email" class="form-control" id="email" name="email"
+                value="{{ email if email is defined else '' }}" required>
             <div class="invalid-feedback">
-                Please provide a valid email address.
+                Please provide a valid email address. {# Bootstrap validation #}
             </div>
         </div>
-
+        <!-- Submit button to add the customer -->
         <button type="submit" class="btn btn-primary">Add Customer</button>
+
+        <!-- Button to cancel the request and redirect to customersearch page  -->
         <a href="{{ url_for('customersearch') }}" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
