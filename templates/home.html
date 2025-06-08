@@ -14,10 +14,13 @@
     <!-- Link for the events page -->
     <a href="{{ url_for('events') }}" class="btn btn-success align-center">Let's get started</a>
   </div>
-  <!-- Homepage Image -->
-  <img class="rounded mx-auto d-block"
-    src="https://t4.ftcdn.net/jpg/02/16/94/65/360_F_216946587_rmug8FCNgpDCPQlstiCJ0CAXJ2sqPRU7.jpg"
-    alt="Selwyn Event Ticketing Logo">
+  <br>
+  <div class="container">
+    <!-- Homepage Image -->
+    <img class="rounded mx-auto d-block"
+      src="{{ url_for('static', filename='concert.jpg') }}"
+      alt="Selwyn Event Ticketing Logo">
+  </div>
 </div>
 
 {% endblock %}
